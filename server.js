@@ -13,15 +13,28 @@ const app = express();
 
 app.get("/", (req, res) => res.send("ESAR notify server running"));
 
+console.log("Attaching listener to /notifications ...");
+
 db.ref("/notifications").on("child_added", (parentSnap) => {
   const uid = parentSnap.key;
+  console.log("Detected UID node under /notifications:", uid);
+
   parentSnap.ref.on("child_added", async (snap) => {
+    console.log("New notification child detected for uid", uid, "key:", snap.key);
     const n = snap.val();
-    if (!n) return;
+    if (!n) {
+      console.log("Notification data was empty, skipping");
+      return;
+    }
 
     const tokenSnap = await db.ref("/users/" + uid + "/fcmToken").get();
     const token = tokenSnap.val();
-    if (!token) return;
+    console.log("Fetched token for uid", uid, ":", token ? token.substring(0, 20) + "..." : "NONE FOUND");
+
+    if (!token) {
+      console.log("No FCM token, cannot send. Aborting for this notification.");
+      return;
+    }
 
     const type = n.type || "general";
     const title = n.senderName || "ESAR";
@@ -55,15 +68,20 @@ db.ref("/notifications").on("child_added", (parentSnap) => {
     };
 
     try {
-      await admin.messaging().send(message);
-      console.log("Notification sent to", uid);
+      const result = await admin.messaging().send(message);
+      console.log("SUCCESS: Notification sent to", uid, "messageId:", result);
     } catch (err) {
-      console.error("FCM error:", err);
+      console.error("FCM SEND ERROR for uid", uid, ":", err.message, err.code || "");
       if (err.code === "messaging/registration-token-not-registered") {
         await db.ref("/users/" + uid + "/fcmToken").remove();
+        console.log("Removed dead token for uid", uid);
       }
     }
+  }, (error) => {
+    console.error("ERROR attaching inner listener for uid", uid, ":", error.message);
   });
+}, (error) => {
+  console.error("ERROR attaching outer /notifications listener:", error.message);
 });
 
 const PORT = process.env.PORT || 3000;
