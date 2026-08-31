@@ -6,11 +6,12 @@ const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: "https://jeko-b63b0-default-rtdb.firebaseio.com"
-});
+7});
 
 const db = admin.database();
 const app = express();
-
+app.use(express.json());
+app.use('/', require('./routes/otp'));
 app.get("/", (req, res) => res.send("ESAR notify server running"));
 
 console.log("Attaching listener to /notifications ...");
