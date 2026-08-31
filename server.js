@@ -1,12 +1,12 @@
 const admin = require("firebase-admin");
 const express = require("express");
-
+77
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: "https://jeko-b63b0-default-rtdb.firebaseio.com"
-7});
+});
 
 const db = admin.database();
 const app = express();
