@@ -35,10 +35,10 @@ router.post('/send-otp', async (req, res) => {
     });
     res.json({ sent: true });
   } catch (e) {
-    res.status(500).json({ error: 'failed to send email' });
+    console.error('EMAIL SEND ERROR:', e.message);
+    res.status(500).json({ error: 'failed to send email', detail: e.message });
   }
 });
-
 router.post('/verify-otp', async (req, res) => {
   const { email, pin } = req.body;
   if (!email || !pin) return res.status(400).json({ error: 'email and pin required' });
