@@ -4,13 +4,15 @@ const nodemailer = require('nodemailer');
 const admin = require('firebase-admin');
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  family: 4,
   auth: {
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_APP_PASSWORD
   }
 });
-
 function sanitizeEmail(email) {
   return email.toLowerCase().replace(/[.#$\[\]]/g, '_');
 }
