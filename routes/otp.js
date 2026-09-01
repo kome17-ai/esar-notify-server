@@ -1,21 +1,31 @@
 const express = require('express');
 const router = express.Router();
-const nodemailer = require('nodemailer');
 const admin = require('firebase-admin');
 
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  requireTLS: true,
-  family: 4,
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD
-  }
-});
 function sanitizeEmail(email) {
   return email.toLowerCase().replace(/[.#$\[\]]/g, '_');
+}
+
+async function sendViaBrevo(toEmail, pin) {
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'accept': 'application/json',
+      'api-key': process.env.BREVO_API_KEY,
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify({
+      sender: { name: 'ESAR', email: process.env.GMAIL_USER },
+      to: [{ email: toEmail }],
+      subject: 'Your ESAR verification code',
+      textContent: `Your verification code is ${pin}. It expires in 10 minutes.`
+    })
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error('Brevo error: ' + errText);
+  }
 }
 
 router.post('/send-otp', async (req, res) => {
@@ -30,18 +40,14 @@ router.post('/send-otp', async (req, res) => {
   });
 
   try {
-    await transporter.sendMail({
-      from: process.env.GMAIL_USER,
-      to: email,
-      subject: 'Your ESAR verification code',
-      text: `Your verification code is ${pin}. It expires in 10 minutes.`
-    });
+    await sendViaBrevo(email, pin);
     res.json({ sent: true });
   } catch (e) {
     console.error('EMAIL SEND ERROR:', e.message);
     res.status(500).json({ error: 'failed to send email', detail: e.message });
   }
 });
+
 router.post('/verify-otp', async (req, res) => {
   const { email, pin } = req.body;
   if (!email || !pin) return res.status(400).json({ error: 'email and pin required' });
