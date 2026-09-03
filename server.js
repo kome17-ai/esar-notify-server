@@ -15,7 +15,9 @@ app.use(express.json());
 app.use('/', require('./routes/otp'));
 app.get("/", (req, res) => {
   res.send(`<!DOCTYPE html>
-<html><head><title>ESAR</title><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<html><head><title>ESAR</title>
+<meta name="google-site-verification" content="UbaXtNcAadQbKJmfu012AOvQN-Kt-6z452v8mOfFR2s" />
+<meta name="viewport" content="width=device-width, initial-scale=1"></head>
 <body style="font-family:sans-serif;max-width:640px;margin:40px auto;padding:0 20px;line-height:1.6;">
 <h1>ESAR</h1>
 <p>ESAR is a mobile social and messaging app that lets people connect, chat, share photos and voice messages, and stay in touch with the people who matter to them.</p>
