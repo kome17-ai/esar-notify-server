@@ -15,17 +15,38 @@ app.use(express.json());
 app.use('/', require('./routes/otp'));
 app.get("/", (req, res) => {
   res.send(`<!DOCTYPE html>
-<html><head><title>ESAR</title>
-<meta name="google-site-verification" content="UbaXtNcAadQbKJmfu012AOvQN-Kt-6z452v8mOfFR2s" />
-<meta name="viewport" content="width=device-width, initial-scale=1"></head>
-<body style="font-family:sans-serif;max-width:640px;margin:40px auto;padding:0 20px;line-height:1.6;">
+<html><head><title>ESAR</title><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="font-family:sans-serif;max-width:680px;margin:40px auto;padding:0 20px;line-height:1.6;">
+
 <h1>ESAR</h1>
-<p>ESAR is a mobile social and messaging app that lets people connect, chat, share photos and voice messages, and stay in touch with the people who matter to them.</p>
-<p>ESAR is developed and operated independently. This page provides public information about the app.</p>
+<p><strong>ESAR is a free mobile app that connects people, moves them around, gets them work, and lets them buy and sell — all in one place.</strong> This page is publicly accessible to everyone and does not require sign-in.</p>
+
+<h2>What you can do on ESAR</h2>
+
+<h3>💬 Chat &amp; Connect</h3>
+<p>Send text messages, photos, and voice messages to friends and family in real time. Make voice and video calls directly within the app.</p>
+
+<h3>🚗 Book a Ride</h3>
+<p>Request a ride from a nearby ESAR driver and get where you need to go. Track your driver's location and estimated arrival time right in the app.</p>
+
+<h3>💼 Find Work</h3>
+<p>Browse job listings and apply for paying work opportunities posted by employers and individuals in your area, directly through ESAR.</p>
+
+<h3>🛍️ Buy &amp; Sell on ESAR Market</h3>
+<p>List your own products for sale, or browse and buy from other sellers on the ESAR Market. Orders are delivered by ESAR drivers for a small delivery fee, so sellers don't need to arrange their own delivery.</p>
+
+<h2>Who ESAR is for</h2>
+<p>ESAR is built for everyday people who want one app to talk to the people who matter, get around their city, earn income, and run a small online shop — without needing separate apps for each.</p>
+
+<h2>Legal</h2>
 <ul>
 <li><a href="/privacy">Privacy Policy</a></li>
 <li><a href="/terms">Terms of Service</a></li>
 </ul>
+
+<h2>Contact</h2>
+<p>For questions about ESAR, contact: komesammuel@gmail.com</p>
+
 </body></html>`);
 });
 
