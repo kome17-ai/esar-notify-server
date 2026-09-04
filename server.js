@@ -364,20 +364,16 @@ db.ref("/notifications").on("child_added", (parentSnap) => {
     if (n.callerId) data.callerId = String(n.callerId);
     if (n.callerName) data.callerName = String(n.callerName);
 
-    const message = {
-      token,
-      notification: { title, body },
-      data,
-      android: {
-        priority: "high",
-        notification: {
-          channelId: type.indexOf("call") >= 0 ? "esar_calls" : "esar_default",
-          sound: "default",
-          priority: "high",
-          defaultVibrateTimings: true
-        }
-      }
-    };
+    data.title = String(title);
+data.body = String(body);
+
+const message = {
+  token,
+  data,
+  android: {
+    priority: "high"
+  }
+};
 
     try {
       const result = await admin.messaging().send(message);
