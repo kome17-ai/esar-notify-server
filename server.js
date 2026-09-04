@@ -19,6 +19,7 @@ app.get("/", (req, res) => {
 <head>
 <title>ESAR — Chat, Ride, Work, Shop</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+google-site-verification=dCdbYO7XVrYbQSWAvliF55p9V7QLZVW5EuZILPSKrLk
 <style>
   * { box-sizing: border-box; }
   body {
