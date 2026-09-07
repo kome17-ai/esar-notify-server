@@ -215,10 +215,13 @@ ${FOOTER}
 <script>
   fetch('/api/ad').then(r => r.json()).then(ad => {
     if (!ad || !ad.active) return;
+    const mediaHtml = ad.videoUrl
+      ? \`<video src="\${ad.videoUrl}" autoplay muted loop playsinline style="width:100px;height:100px;object-fit:cover;border-radius:10px"></video>\`
+      : \`<img src="\${ad.imageUrl}" alt="Sponsored">\`;
     document.getElementById('ad-slot').innerHTML = \`
       <a href="\${ad.linkUrl}" target="_blank" style="display:block">
         <div class="ad-card">
-          <img src="\${ad.imageUrl}" alt="Sponsored">
+          \${mediaHtml}
           <div>
             <div class="ad-label">Sponsored</div>
             <h4>\${ad.headline}</h4>
