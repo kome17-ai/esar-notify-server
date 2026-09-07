@@ -348,6 +348,7 @@ app.post('/api/ad', (req, res) => {
   currentAd = {
     active: !!req.body.active,
     imageUrl: req.body.imageUrl || '',
+    videoUrl: req.body.videoUrl || '',
     linkUrl: req.body.linkUrl || '#',
     headline: req.body.headline || '',
     description: req.body.description || ''
