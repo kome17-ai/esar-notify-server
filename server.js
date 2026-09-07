@@ -421,4 +421,3 @@ db.ref("/notifications").on("child_added", (parentSnap) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log("Server listening on port " + PORT));
-EOF
