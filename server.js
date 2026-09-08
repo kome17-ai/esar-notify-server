@@ -82,7 +82,7 @@ app.get("/", async (req, res) => {
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="google-site-verification" content="dCdbYO7XVrYbQSWAvliF55p9V7QLZVW5E" />
+<meta name="google-site-verification" content="UbaXtNcAadQbKJmfu012AOvQN-Kt-6z452v8mOfFR2s" />
 <title>ESAR — Chat, Rides, Jobs, Marketplace & More, All in One App</title>
 <meta name="description" content="ESAR brings chat, short videos, rides, jobs, and marketplace into a single app. Built for real life, all in one place." />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
