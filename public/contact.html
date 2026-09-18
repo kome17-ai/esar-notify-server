@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Desk — ESAR</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="ad-banner" role="complementary" aria-label="Advertisement">
+    <div class="ad-slide">
+      <span class="ad-tag" data-ad-tag>Advertisement</span>
+      <span data-ad-text>Esar Worlds — Social, Rides, Chat, Video and Market.</span>
+      <a class="ad-cta" data-ad-cta href="worlds.html">Open worlds</a>
+    </div>
+    <button class="ad-close" type="button" data-ad-close aria-label="Close advertisement">×</button>
+  </div>
+  <header class="nav">
+    <div class="nav-inner">
+      <a class="logo" href="index.html">ES<span>AR</span></a>
+      <ul class="nav-links">
+        <li><a href="index.html">House</a></li>
+        <li><a href="story.html">Story</a></li>
+        <li><a href="worlds.html">Worlds</a></li>
+        <li><a href="journal.html">Journal</a></li>
+        <li><a class="active" href="contact.html">Desk</a></li>
+      </ul>
+      <a class="nav-cta" href="worlds.html">Enter the worlds</a>
+      <button class="burger" type="button" data-burger aria-label="Menu"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+
+  <div class="page-hero wrap">
+    <p class="eyebrow">Desk</p>
+    <h1>Write to the house.</h1>
+    <p class="lede" style="margin-top:16px">Partnerships, press, safety notes, and ordinary questions all arrive here.</p>
+  </div>
+
+  <section style="padding-top:12px">
+    <div class="wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start">
+      <form class="form" data-contact>
+        <input type="text" name="name" placeholder="Your name" required />
+        <input type="email" name="email" placeholder="Email" required />
+        <select name="topic">
+          <option value="hello">Say hello</option>
+          <option value="safety">Safety</option>
+          <option value="press">Press</option>
+          <option value="partner">Partnership</option>
+        </select>
+        <textarea name="message" placeholder="Message" required></textarea>
+        <button class="btn btn-gold" type="submit">Send to the desk</button>
+        <p class="form-ok">Received. The desk will write back.</p>
+      </form>
+      <div class="prose">
+        <p>Email <a href="mailto:komesammuel@gmail.com">komesammuel@gmail.com</a></p>
+        <p>Safety <a href="mailto:safety@esar.app">safety@esar.app</a></p>
+        <p>This form stays on your computer. Hook it to your own email or backend when you publish the site.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <p class="section-kicker">Questions</p>
+      <h2 class="section-title">Usually asked.</h2>
+      <div class="faq">
+        <details open>
+          <summary>Is this only an app page?</summary>
+          <p>No. The site is the house: story, worlds, journal, and desk. The stores are one shelf in the hallway.</p>
+        </details>
+        <details>
+          <summary>What worlds exist today?</summary>
+          <p>Social (feed), Rides (city cars), Chat (messages), Play (video), Market (buy and sell), and Pay (wallet).</p>
+        </details>
+        <details>
+          <summary>Is it alright for younger people?</summary>
+          <p>The house is designed family-first: safer defaults, trip sharing, and moderated video. Parents still decide who gets an account.</p>
+        </details>
+        <details>
+          <summary>Can I change the ads banner?</summary>
+          <p>Yes. Edit the ads list in js/main.js. The top strip is meant for house notes and partner lines.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap foot-grid">
+      <div><a class="logo" href="index.html">ES<span>AR</span></a></div>
+      <div><h4>House</h4><a href="index.html">Home</a><a href="story.html">Story</a></div>
+      <div><h4>Worlds</h4><a href="worlds.html">All rooms</a></div>
+      <div><h4>Journal</h4><a href="journal.html">Essays</a></div>
+    </div>
+    <div class="wrap legal"><span>© <span data-year>2026</span> ESAR</span><span>Desk</span></div>
+  </footer>
+  <script src="js/main.js"></script>
+</body>
+</html>
