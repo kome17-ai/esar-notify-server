@@ -45,8 +45,14 @@
       '</div>';
 
     document.body.appendChild(card);
+    card.style.cursor = "pointer";
 
-    card.querySelector("[data-float-close]").addEventListener("click", function () {
+    card.addEventListener("click", function () {
+      window.open(ad.linkUrl || "#", "_blank");
+    });
+
+    card.querySelector("[data-float-close]").addEventListener("click", function (e) {
+      e.stopPropagation();
       card.remove();
       try { sessionStorage.setItem("esar-float-ad-closed", "1"); } catch (e) {}
     });
