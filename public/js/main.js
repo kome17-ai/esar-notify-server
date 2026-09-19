@@ -5,10 +5,10 @@
     { tag: "House note", title: "Creators desk", text: "Upload family-friendly videos to Esar Play and keep the comments kind.", href: "journal.html" }
   ];
 
-  // Pull in any live sponsor ad set via /api/ad (same system used across the ESAR backend).
-  // Falls back silently to the three house ads above if none is active or the request fails.
   fetch("/api/ad").then(function (r) { return r.json(); }).then(function (ad) {
-    if (ad && ad.active && ad.headline) {
+    if (!ad || !ad.active) return;
+
+    if (ad.headline) {
       ads.unshift({
         tag: "Sponsored",
         title: ad.headline,
@@ -16,7 +16,41 @@
         href: ad.linkUrl || "#"
       });
     }
+
+    if (ad.videoUrl || ad.imageUrl) {
+      renderFloatingAd(ad);
+    }
   }).catch(function () {});
+
+  function renderFloatingAd(ad) {
+    try {
+      if (sessionStorage.getItem("esar-float-ad-closed") === "1") return;
+    } catch (e) {}
+
+    var card = document.createElement("div");
+    card.className = "float-ad";
+
+    var mediaHtml = ad.videoUrl
+      ? '<video class="media" src="' + ad.videoUrl + '" autoplay muted loop playsinline></video>'
+      : '<img class="media" src="' + ad.imageUrl + '" alt="Sponsored" />';
+
+    card.innerHTML =
+      mediaHtml +
+      '<div class="float-close" data-float-close>×</div>' +
+      '<div class="body">' +
+        '<span class="tag">Sponsored</span>' +
+        '<h4>' + (ad.headline || "") + '</h4>' +
+        (ad.description ? '<p>' + ad.description + '</p>' : '') +
+        '<a class="float-cta" href="' + (ad.linkUrl || "#") + '" target="_blank">Learn more</a>' +
+      '</div>';
+
+    document.body.appendChild(card);
+
+    card.querySelector("[data-float-close]").addEventListener("click", function () {
+      card.remove();
+      try { sessionStorage.setItem("esar-float-ad-closed", "1"); } catch (e) {}
+    });
+  }
 
   var banner = document.querySelector("[data-ad-text]");
   var tagEl = document.querySelector("[data-ad-tag]");
