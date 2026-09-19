@@ -12,7 +12,7 @@ admin.initializeApp({
 const db = admin.database();
 const app = express();
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static('public', { extensions: ['html'] }));
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain');
   res.send('User-agent: *\nAllow: /\n');
