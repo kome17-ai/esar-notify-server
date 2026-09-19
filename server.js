@@ -97,6 +97,11 @@ db.ref("/notifications").on("child_added", (parentSnap) => {
       return;
     }
 
+if (n.sent === true) {
+      console.log("Notification already sent previously, skipping:", snap.key);
+      return;
+    }
+
     const tokenSnap = await db.ref("/users/" + uid + "/fcmToken").get();
     const token = tokenSnap.val();
     console.log("Fetched token for uid", uid, ":", token ? token.substring(0, 20) + "..." : "NONE FOUND");
@@ -136,7 +141,9 @@ db.ref("/notifications").on("child_added", (parentSnap) => {
     try {
       const result = await admin.messaging().send(message);
       console.log("SUCCESS: Notification sent to", uid, "messageId:", result);
-    } catch (err) {
+
+await snap.ref.child("sent").set(true);    }
+ catch (err) {
       console.error("FCM SEND ERROR for uid", uid, ":", err.message, err.code || "");
       if (err.code === "messaging/registration-token-not-registered") {
         await db.ref("/users/" + uid + "/fcmToken").remove();
