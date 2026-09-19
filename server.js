@@ -61,18 +61,22 @@ const FOOTER = `
 </footer>`;
 
 
-let currentAd = { active: false };
 const ADMIN_KEY = process.env.ADMIN_KEY || "changeme123";
 
-app.get('/api/ad', (req, res) => {
-  res.json(currentAd);
+app.get('/api/ad', async (req, res) => {
+  try {
+    const snap = await db.ref('siteAd').once('value');
+    res.json(snap.val() || { active: false });
+  } catch (e) {
+    res.json({ active: false });
+  }
 });
 
-app.post('/api/ad', (req, res) => {
+app.post('/api/ad', async (req, res) => {
   if (req.headers['x-admin-key'] !== ADMIN_KEY) {
     return res.status(401).json({ error: 'unauthorized' });
   }
-  currentAd = {
+  const ad = {
     active: !!req.body.active,
     imageUrl: req.body.imageUrl || '',
     videoUrl: req.body.videoUrl || '',
@@ -80,9 +84,13 @@ app.post('/api/ad', (req, res) => {
     headline: req.body.headline || '',
     description: req.body.description || ''
   };
-  res.json({ ok: true, ad: currentAd });
+  try {
+    await db.ref('siteAd').set(ad);
+    res.json({ ok: true, ad });
+  } catch (e) {
+    res.status(500).json({ error: 'failed to save ad' });
+  }
 });
-
 console.log("Attaching listener to /notifications ...");
 
 db.ref("/notifications").on("child_added", (parentSnap) => {
