@@ -19,6 +19,7 @@ app.get('/robots.txt', (req, res) => {
 });
 app.use('/', require('./routes/otp'));
 app.use('/esarpay', require('./routes/esarpay'));
+app.use('/marketplace', require('./routes/marketplace'));
 const SITE_STYLE = `
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:'Inter',-apple-system,sans-serif; background:#0b0f0d; color:#eaf5ef; line-height:1.6; }
