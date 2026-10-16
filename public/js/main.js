@@ -18,34 +18,99 @@
     }
   }).catch(function () {});
 
-  var banner = document.querySelector("[data-ad-text]");
+    var banner = document.querySelector("[data-ad-text]");
   var tagEl = document.querySelector("[data-ad-tag]");
   var ctaEl = document.querySelector("[data-ad-cta]");
-  var i = 0;
-  function paintAd() {
-    if (!banner) return;
-    var a = ads[i % ads.length];
-    if (tagEl) tagEl.textContent = a.tag;
-    banner.innerHTML = "<strong>" + a.title + "</strong> — " + a.text;
-    if (ctaEl) ctaEl.setAttribute("href", a.href);
-    i += 1;
+  var mediaEl = document.querySelector("[data-ad-media]");
+  var adIndex = 0;
+  var adItems = [];
+  var defaultAds = [
+    {tag:"ESAR",title:"Discover ESAR Worlds",text:"Social, Rides, Chat, Video and Market.",href:"worlds.html"}
+  ];
+
+  function safeUrl(value){
+    try{
+      var u = new URL(value, window.location.href);
+      if(u.protocol === "https:" || u.protocol === "http:") return u.href;
+    }catch(e){}
+    return "";
   }
-  paintAd();
-  setInterval(paintAd, 6500);
+
+  function paintAd(){
+    if(!banner) return;
+    var a = adItems[adIndex % adItems.length];
+    if(tagEl) tagEl.textContent = a.tag || "Sponsored";
+    banner.textContent = "";
+    var strong = document.createElement("strong");
+    strong.textContent = a.title || "Discover ESAR";
+    banner.appendChild(strong);
+    if(a.text){
+      banner.appendChild(document.createTextNode(" — " + a.text));
+    }
+    if(ctaEl){
+      ctaEl.href = safeUrl(a.href) || "worlds.html";
+      ctaEl.textContent = "Explore";
+    }
+    if(mediaEl){
+      mediaEl.replaceChildren();
+      var videoUrl = safeUrl(a.videoUrl);
+      var imageUrl = safeUrl(a.imageUrl);
+      if(videoUrl){
+        var video = document.createElement("video");
+        video.src = videoUrl;
+        video.autoplay = true;
+        video.muted = true;
+        video.loop = true;
+        video.playsInline = true;
+        video.controls = true;
+        video.preload = "metadata";
+        mediaEl.appendChild(video);
+        video.play().catch(function(){});
+      }else if(imageUrl){
+        var img = document.createElement("img");
+        img.src = imageUrl;
+        img.alt = a.title || "ESAR advertisement";
+        img.loading = "eager";
+        mediaEl.appendChild(img);
+      }
+    }
+    adIndex++;
+  }
+
+  fetch("/api/ad").then(function(r){
+    if(!r.ok) throw new Error("Advertisement request failed");
+    return r.json();
+  }).then(function(ad){
+    if(ad && ad.active && ad.headline){
+      adItems = [{
+        tag:"Sponsored",
+        title:ad.headline,
+        text:ad.description || "",
+        href:ad.linkUrl || "worlds.html",
+        imageUrl:ad.imageUrl || "",
+        videoUrl:ad.videoUrl || ""
+      }];
+    }else{
+      adItems = defaultAds;
+    }
+    paintAd();
+  }).catch(function(){
+    adItems = defaultAds;
+    paintAd();
+  });
 
   var close = document.querySelector("[data-ad-close]");
-  if (close) {
-    close.addEventListener("click", function () {
+  if(close){
+    close.addEventListener("click",function(){
       document.body.classList.add("ad-hidden");
-      try { sessionStorage.setItem("esar-ad-closed", "1"); } catch (e) {}
+      try{sessionStorage.setItem("esar-ad-closed","1");}catch(e){}
     });
   }
-  try {
-    if (sessionStorage.getItem("esar-ad-closed") === "1") {
+  try{
+    if(sessionStorage.getItem("esar-ad-closed")==="1"){
       document.body.classList.add("ad-hidden");
     }
-  } catch (e) {}
-
+  }catch(e){}
   var burger = document.querySelector("[data-burger]");
   var nav = document.querySelector(".nav");
   if (burger && nav) burger.addEventListener("click", function () { nav.classList.toggle("open"); });
