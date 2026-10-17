@@ -67,27 +67,12 @@ router.post('/deposit/initiate', requireAuth, async (req, res) => {
 // This is the only place a deposit is ever marked "completed" and credited —
 // never trust a "success" claim coming from the phone itself.
 router.post('/webhook/flutterwave', async (req, res) => {
-  // Once wired: verify req.headers['verif-hash'] against your Flutterwave
-  // secret hash before trusting ANYTHING in this payload.
-  const event = req.body;
-
-  // Placeholder structure — adjust field names to match Flutterwave's real
-  // webhook payload once you're integrated.
-  const uid = event.uid;
-  const txnId = event.transactionId;
-  const amount = event.amount;
-
-  if (!uid || !txnId || !amount) return res.status(400).send('bad payload');
-
-  const txnRef = db().ref(`/users/${uid}/esarPay/transactions/${txnId}`);
-  const balanceRef = db().ref(`/users/${uid}/esarPay/balance`);
-
-  await balanceRef.transaction(current => (current || 0) + amount);
-  await txnRef.update({ status: 'completed' });
-
-  res.status(200).send('ok');
+const secretHash = process.env.FLUTTERWAVE_SECRET_HASH;
+if (!secretHash) return res.status(503).json({error:'Payment verification is not configured'});
+const received = req.headers['verif-hash'];
+if (!received || received !== secretHash) return res.status(401).json({error:'Invalid payment signature'});
+return res.status(503).json({error:'Provider transaction verification is not implemented; no balance was credited'});
 });
-
 // POST /esarpay/withdraw/initiate  { amount, methodId }
 router.post('/withdraw/initiate', requireAuth, async (req, res) => {
   const { amount, methodId } = req.body;

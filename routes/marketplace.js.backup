@@ -1,0 +1,7 @@
+const express=require('express');
+const router=express.Router();
+const admin=require('firebase-admin');
+function db(){return admin.database();}
+async function requireAuth(req,res,next){const h=req.headers.authorization||'';const t=h.indexOf('Bearer ')===0?h.substring(7):'';if(!t)return res.status(401).json({error:'missing_auth_token'});try{const d=await admin.auth().verifyIdToken(t);req.uid=d.uid;next();}catch(e){return res.status(401).json({error:'invalid_auth_token'});}}
+router.get('/product/:productId/checkout-info',requireAuth,async(req,res)=>{try{const id=req.params.productId;if(!id||id.indexOf('/')!==-1)return res.status(400).json({error:'invalid_product_id'});const s=await db().ref('/marketplaceProducts/'+id).once('value');if(!s.exists())return res.status(404).json({error:'product_not_found'});const p=s.val();const price=Number(p.price);const stock=Number(p.quantityAvailable);if(!isFinite(price)||price<=0)return res.status(400).json({error:'invalid_product_price'});if(!isFinite(stock)||stock<=0||String(p.status||'').toLowerCase()==='sold')return res.status(409).json({error:'product_unavailable'});return res.json({ok:true,productId:id,title:p.title||'',sellerId:p.sellerId||'',price:price,currency:p.currency||'XAF',quantityAvailable:stock});}catch(e){console.error('Marketplace checkout-info error:',e);return res.status(500).json({error:'internal_server_error'});}});
+module.exports=router;
