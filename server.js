@@ -21,6 +21,8 @@ app.use('/', require('./routes/otp'));
 app.use('/esarpay', require('./routes/esarpay'));
 app.use('/marketplace', require('./routes/marketplace'));
 app.use('/creator', require('./routes/creator'));
+app.use('/promotion', require('./routes/promotion'));
+app.use('/currency', require('./routes/currency'));
 const SITE_STYLE = `
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:'Inter',-apple-system,sans-serif; background:#0b0f0d; color:#eaf5ef; line-height:1.6; }
