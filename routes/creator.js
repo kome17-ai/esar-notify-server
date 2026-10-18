@@ -79,6 +79,7 @@ router.post('/payout',requireAuth,rateLimit,async(req,res)=>{
     if(locked)await lockRef.set(prev||null).catch(()=>{});
   };
   try{
+    if((await db().ref('/payoutConfig/enabled').once('value')).val()!==true)return fail(res,503,'payouts_paused');
     amount=await earnedAmount(uid);
     if(amount<=0)return fail(res,400,'not_eligible');
     const lock=await lockRef.transaction(v=>{prev=v;if(v&&now-num(v)<COOLDOWN)return;return now;});
