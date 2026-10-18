@@ -251,7 +251,7 @@ router.post('/orders/:orderId/complete-delivery',requireAuth,async(req,res)=>{
     }
     if(num(order.platformFee)>0){
       await walletChange(PLATFORM_UID,id+'_platform',num(order.platformFee),{orderId:id,type:'marketplace_fee',description:'ESAR Marketplace platform fee'});
-    if(num(order.deliveryFee)>0&&order.preferredDriverId){
+  }  if(num(order.deliveryFee)>0&&order.preferredDriverId){
       await walletChange(order.preferredDriverId,id+'_driver',num(order.deliveryFee),{orderId:id,type:'delivery_earnings',description:'Delivery earnings: '+(order.productTitle||id)});
     }
 
