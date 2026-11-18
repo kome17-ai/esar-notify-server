@@ -11,6 +11,7 @@ admin.initializeApp({
 
 const db = admin.database();
 const app = express();
+app.use('/ai', require('./ai'));
 app.use(express.json());
 app.use(express.static('public', { extensions: ['html'] }));
 app.get('/robots.txt', (req, res) => {
