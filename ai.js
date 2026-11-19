@@ -120,17 +120,22 @@ async function callModel(model, system, contents, opts) {
 
 async function gemini(system, contents, opts = {}) {
   const order = preferred ? [preferred].concat(MODELS.filter(m => m !== preferred)) : MODELS;
+  const t0 = Date.now();
   let last = null;
-  for (const m of order) {
-    try {
-      const text = await callModel(m, system, contents, opts);
-      preferred = m;
-      return text;
-    } catch (e) {
-      last = e;
-      console.error('[ai] model', m, '->', e.status, e.message);
-      if (!(e.status === 404 || e.status === 400 || e.status === 0)) break;
+  for (let round = 0; round < 2; round++) {
+    for (const m of order) {
+      if (Date.now() - t0 > 45000) throw last || new AiError(0, 'timeout');
+      try {
+        const text = await callModel(m, system, contents, opts);
+        preferred = m;
+        return text;
+      } catch (e) {
+        last = e;
+        console.error('[ai] model', m, '->', e.status, e.message);
+        if (e.status === 401 || e.status === 403) throw e;
+      }
     }
+    if (round === 0) await new Promise(r => setTimeout(r, 1500));
   }
   throw last || new AiError(0, 'no model');
 }
