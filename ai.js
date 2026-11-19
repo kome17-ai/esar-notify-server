@@ -43,7 +43,7 @@ function limited(uid) {
   b.n++;
   buckets.set(uid, b);
   if (buckets.size > 5000) buckets.clear();
-  return b.n > 20;
+  return b.n > 40;
 }
 
 let healthCache = null;
@@ -270,6 +270,178 @@ router.post('/moderate', async (req, res) => {
     let j = {};
     try { j = JSON.parse(raw); } catch (e) {}
     res.json({ ok: true, allowed: j.allowed !== false, reason: clip(j.reason, 80) });
+  } catch (e) { fail(res, e); }
+});
+
+/* ===================== VOICE CALLS ===================== */
+// Extra environment variables (all optional except the Gemini key you already have):
+//   ELEVENLABS_API_KEY  needed only for cloned/custom voices (your own voice, someone else's with permission)
+//   CUSTOM_VOICES       JSON list, e.g. [{"id":"<ElevenLabs voice id>","name":"Kome Samuel","style":"My voice"}]
+//   ELEVENLABS_MODEL    default eleven_flash_v2_5 (fast). Use eleven_multilingual_v2 for best quality.
+//   GEMINI_TTS_MODEL    default gemini-3.8-flash-tts
+const TTS_MODELS = Array.from(new Set(
+  [process.env.GEMINI_TTS_MODEL || 'gemini-3.8-flash-tts']
+    .concat((process.env.GEMINI_TTS_FALLBACK || 'gemini-3.8-flash-lite-tts').split(','))
+    .map(s => s.trim()).filter(Boolean)
+));
+const BUILTIN_VOICES = [
+  ['Kore', 'Firm'], ['Puck', 'Upbeat'], ['Aoede', 'Breezy'], ['Charon', 'Informative'],
+  ['Fenrir', 'Excitable'], ['Leda', 'Youthful'], ['Sulafat', 'Warm'], ['Achird', 'Friendly']
+];
+const EL_KEY = process.env.ELEVENLABS_API_KEY;
+const EL_MODEL = process.env.ELEVENLABS_MODEL || 'eleven_flash_v2_5';
+let CUSTOM = [];
+try { CUSTOM = JSON.parse(process.env.CUSTOM_VOICES || '[]'); } catch (e) { console.error('[ai] CUSTOM_VOICES is not valid JSON'); }
+CUSTOM = (Array.isArray(CUSTOM) ? CUSTOM : []).filter(v => v && v.id && v.name).slice(0, 10);
+
+// Gemini returns a WAV file; the app wants raw 24 kHz 16-bit mono PCM.
+function pcmFromWav(buf) {
+  if (buf.length > 44 && buf.toString('ascii', 0, 4) === 'RIFF') {
+    let off = 12;
+    while (off + 8 <= buf.length) {
+      const id = buf.toString('ascii', off, off + 4);
+      const size = buf.readUInt32LE(off + 4);
+      if (id === 'data') {
+        const end = off + 8 + size <= buf.length ? off + 8 + size : buf.length;
+        return buf.subarray(off + 8, end);
+      }
+      off += 8 + size + (size % 2);
+    }
+    return buf.subarray(44);
+  }
+  return buf;
+}
+
+let ttsGood = null; // { model, shape } that worked last time
+async function geminiTts(text, voiceName) {
+  const shapes = [{ prebuiltVoiceConfig: { voiceName } }, { voice: voiceName }];
+  const tries = [];
+  if (ttsGood) tries.push(ttsGood);
+  for (const model of TTS_MODELS) for (let i = 0; i < shapes.length; i++) tries.push({ model, shape: i });
+  let last = null;
+  for (const t of tries) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 25000);
+    try {
+      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + t.model + ':generateContent', {
+        method: 'POST',
+        signal: ctrl.signal,
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text }] }],
+          generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: shapes[t.shape] } }
+        })
+      });
+      if (!r.ok) {
+        let m = '';
+        try { const j = await r.json(); m = (j.error && j.error.message) || ''; } catch (e) {}
+        throw new AiError(r.status, m || ('http ' + r.status));
+      }
+      const j = await r.json();
+      const parts = (j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts) || [];
+      const p = parts.find(x => x.inlineData && x.inlineData.data);
+      if (!p) throw new AiError(0, 'no audio returned');
+      ttsGood = t;
+      return pcmFromWav(Buffer.from(p.inlineData.data, 'base64'));
+    } catch (e) {
+      last = e instanceof AiError ? e : new AiError(0, e && e.name === 'AbortError' ? 'timeout' : (e && e.message) || 'network');
+      console.error('[ai] tts', t.model, 'shape', t.shape, '->', last.status, last.message);
+      if (last.status === 401 || last.status === 403) throw last;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  throw last || new AiError(0, 'tts failed');
+}
+
+async function elevenTts(text, voiceId) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 25000);
+  try {
+    const r = await fetch('https://api.elevenlabs.io/v1/text-to-speech/' + encodeURIComponent(voiceId) + '?output_format=pcm_24000', {
+      method: 'POST',
+      signal: ctrl.signal,
+      headers: { 'xi-api-key': EL_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, model_id: EL_MODEL })
+    });
+    if (!r.ok) {
+      let m = '';
+      try { const j = await r.json(); m = j.detail && (j.detail.message || j.detail.status || j.detail); } catch (e) {}
+      throw new AiError(r.status, 'elevenlabs: ' + String(m || r.status).slice(0, 160));
+    }
+    return Buffer.from(await r.arrayBuffer());
+  } catch (e) {
+    if (e instanceof AiError) throw e;
+    throw new AiError(0, e && e.name === 'AbortError' ? 'timeout' : (e && e.message) || 'network');
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// voice ids look like "g:Kore" (built-in) or "c:<elevenlabs id>" (custom)
+async function speak(text, voice) {
+  const v = String(voice || 'g:Kore');
+  if (v.startsWith('c:')) {
+    const id = v.slice(2);
+    if (!EL_KEY || !CUSTOM.some(c => c.id === id)) throw new AiError(0, 'custom voice not available');
+    return elevenTts(text, id);
+  }
+  const name = v.startsWith('g:') ? v.slice(2) : v;
+  return geminiTts(text, BUILTIN_VOICES.some(b => b[0] === name) ? name : 'Kore');
+}
+
+router.post('/voices', (req, res) => {
+  const custom = EL_KEY ? CUSTOM.map(c => ({ id: 'c:' + c.id, name: c.name, style: c.style || 'Custom voice', kind: 'custom' })) : [];
+  const built = BUILTIN_VOICES.map(b => ({ id: 'g:' + b[0], name: b[0], style: b[1], kind: 'gemini' }));
+  res.json({ ok: true, voices: custom.concat(built) });
+});
+
+router.post('/tts', async (req, res) => {
+  try {
+    const text = clip(req.body.text, 400);
+    if (!text) return res.status(400).json({ ok: false, error: 'Nothing to say' });
+    const pcm = await speak(text, req.body.voice);
+    res.json({ ok: true, audio: pcm.toString('base64'), sampleRate: 24000 });
+  } catch (e) { fail(res, e); }
+});
+
+router.post('/call', async (req, res) => {
+  try {
+    const b = req.body || {};
+    const lang = b.lang === 'fr' ? 'fr' : 'en';
+    const hist = (Array.isArray(b.history) ? b.history : []).slice(-8)
+      .map(m => ({ role: m.role === 'model' ? 'model' : 'user', parts: [{ text: clip(m.text, 600) }] }))
+      .filter(m => m.parts[0].text);
+    while (hist.length && hist[0].role === 'model') hist.shift();
+
+    const parts = [];
+    if (b.greet) {
+      parts.push({ text: 'The call just connected. Greet me warmly in one short sentence and ask how you can help.' });
+    } else {
+      const a = b.audio || {};
+      const mime = String(a.mime || '').toLowerCase();
+      const data = typeof a.data === 'string' ? a.data : '';
+      if (!data || data.length > 6000000 || mime.indexOf('audio/') !== 0)
+        return res.status(400).json({ ok: false, error: 'No audio received' });
+      parts.push({ inlineData: { mimeType: mime, data } });
+      parts.push({ text: 'This is what I just said on the phone call. Reply to me.' });
+    }
+
+    const system = BASE + '\n' + FOUNDER +
+      '\nYou are on a live voice call. Speak naturally in 1 to 3 short sentences. No markdown, no lists, no emojis, no symbols. ' +
+      'Reply in the language the user speaks (English or French); default to ' + langName(lang) + '. ' +
+      'Return JSON only: {"heard":"<the exact words the user said, empty for the greeting>","reply":"<what you say out loud>"}.';
+    const raw = await gemini(system, hist.concat([{ role: 'user', parts }]),
+      { temperature: 0.8, maxOutputTokens: 1024, responseMimeType: 'application/json' });
+    let j = {};
+    try { j = JSON.parse(raw); } catch (e) { j = { heard: '', reply: raw }; }
+    const reply = clip(j.reply, 500) || (lang === 'fr' ? "Désolé, je n'ai pas compris." : "Sorry, I didn't catch that.");
+
+    let audio = null, ttsError = '';
+    try { audio = (await speak(reply, b.voice)).toString('base64'); }
+    catch (e) { ttsError = clip(e.message, 160); console.error('[ai] call tts failed:', e.status, e.message); }
+
+    res.json({ ok: true, heard: clip(j.heard, 500), reply, audio, sampleRate: 24000, ttsError });
   } catch (e) { fail(res, e); }
 });
 
