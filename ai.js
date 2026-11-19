@@ -319,9 +319,12 @@ async function geminiTts(text, voiceName) {
   if (ttsGood) tries.push(ttsGood);
   for (const model of TTS_MODELS) for (let i = 0; i < shapes.length; i++) tries.push({ model, shape: i });
   let last = null;
+  const t0 = Date.now();
   for (const t of tries) {
+    const left = 24000 - (Date.now() - t0);
+    if (left < 2500) break;
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 25000);
+    const timer = setTimeout(() => ctrl.abort(), Math.min(16000, left));
     try {
       const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + t.model + ':generateContent', {
         method: 'POST',
@@ -406,6 +409,7 @@ router.post('/tts', async (req, res) => {
 });
 
 router.post('/call', async (req, res) => {
+  const tStart = Date.now();
   try {
     const b = req.body || {};
     const lang = b.lang === 'fr' ? 'fr' : 'en';
@@ -438,8 +442,11 @@ router.post('/call', async (req, res) => {
     const reply = clip(j.reply, 500) || (lang === 'fr' ? "Désolé, je n'ai pas compris." : "Sorry, I didn't catch that.");
 
     let audio = null, ttsError = '';
-    try { audio = (await speak(reply, b.voice)).toString('base64'); }
-    catch (e) { ttsError = clip(e.message, 160); console.error('[ai] call tts failed:', e.status, e.message); }
+    if (!b.skipTts) {
+      try { audio = (await speak(reply, b.voice)).toString('base64'); }
+      catch (e) { ttsError = clip(e.message, 160); console.error('[ai] call tts failed:', e.status, e.message); }
+    }
+    console.log('[ai] call done in', Date.now() - tStart, 'ms');
 
     res.json({ ok: true, heard: clip(j.heard, 500), reply, audio, sampleRate: 24000, ttsError });
   } catch (e) { fail(res, e); }
